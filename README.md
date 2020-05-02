@@ -21,17 +21,17 @@ fn main() -> Result<(), WifiBulbError>{
     // Set the color to red via a tuple and delay for 800ms
     let g = (0, 255, 0);
     bulb.set_tuple(g);
-    bulb.delay_sec(1.);
+    bulb.delay_sec(0.8);
 
-    // Turn off for 1sec
+    // Turn off for 2 sec
     bulb.off()?;
-    bulb.delay_msec(1000);
+    bulb.delay_msec(2000);
 
 
     // Turn on as red for 1sec
     let r = (255, 0, 0);
     bulb.set_tuple(r);
-    bulb.delay_msec(1000);
+    bulb.delay_sec(1.);
 
 
     // Manually disconnect
