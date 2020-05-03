@@ -18,7 +18,7 @@ fn main() -> Result<(), WifiBulbError>{
     bulb.set_color(blue)?;
     bulb.delay_msec(1000);
 
-    // Set the color to red via a tuple and delay for 800ms
+    // Set the color to green via a tuple and delay for 800ms
     let g = (0, 255, 0);
     bulb.set_tuple(g);
     bulb.delay_sec(0.8);
