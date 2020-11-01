@@ -1,5 +1,5 @@
 [package]
-name = "magicbulb-rust"
+name = "magiclight-rust"
 version = "0.1.0"
 authors = ["Adam Shirey"]
 edition = "2018"
