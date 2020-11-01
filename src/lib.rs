@@ -1,9 +1,9 @@
 #![allow(dead_code)]
 
 use std::io::prelude::*;
-use std::net::{Shutdown, SocketAddr, TcpStream};
-use std::time::Instant;
-use std::{thread, time};
+use std::net::{Shutdown, TcpStream}; // SocketAddr when scanning
+use std::thread;
+use std::time::Duration;
 
 const PORT_NUM: &'static str = ":5577";
 
@@ -21,11 +21,21 @@ impl From<std::io::Error> for WifiBulbError {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Copy, Clone)]
 pub struct Color {
     pub red: u8,
     pub green: u8,
     pub blue: u8,
+}
+
+impl From<(u8, u8, u8)> for Color {
+    fn from(values: (u8, u8, u8)) -> Self {
+        Color {
+            red: values.0,
+            green: values.1,
+            blue: values.2,
+        }
+    }
 }
 
 #[derive(Debug)]
@@ -35,13 +45,13 @@ pub struct WifiBulb {
 
 impl Drop for WifiBulb {
     fn drop(&mut self) {
-        self.disconnect();
+        self.disconnect().unwrap();
     }
 }
 
 impl WifiBulb {
-    fn scan(timeout: std::time::Duration) -> Result<Self, WifiBulbError> {
-        todo!()
+    fn scan(_timeout: Duration) -> Result<Self, WifiBulbError> {
+        todo!("Scan the local network for wifi bulbs")
     }
 
     pub fn new(address: &str) -> Result<Self, WifiBulbError> {
@@ -59,18 +69,8 @@ impl WifiBulb {
         self.stream.shutdown(Shutdown::Both).map_err(|e| e.into())
     }
 
-    pub fn set_tuple(&mut self, colors: (u8, u8, u8)) -> Result<(), WifiBulbError> {
-        self.set_color(Color {
-            red: colors.0,
-            green: colors.1,
-            blue: colors.2,
-        })?;
-
-        Ok(())
-    }
-
     pub fn off(&mut self) -> Result<(), WifiBulbError> {
-        self.set_tuple((0, 0, 0))?;
+        self.set_color((0, 0, 0).into())?;
         Ok(())
     }
 
@@ -128,13 +128,68 @@ impl WifiBulb {
         (sum % mod_val) as u8
     }
 
+    /// Convenience function for callers to delay.
     pub fn delay_sec(&self, sec: f32) {
-        let dur = time::Duration::from_micros((sec * 1_000_000.) as u64);
+        let dur = Duration::from_micros((sec * 1_000_000.) as u64);
         thread::sleep(dur);
     }
 
+    /// Convenience function for callers to delay.
     pub fn delay_msec(&self, msec: u64) {
-        let dur = time::Duration::from_millis(msec);
+        let dur = Duration::from_millis(msec);
         thread::sleep(dur);
+    }
+
+    /// Fade between two colors.
+    /// 
+    /// The light will fade from `from` to `to` over approximately the `duration` (plus time to execute color changes) in
+    /// `num_steps` distinct steps.
+    pub fn fade_between(&mut self, from: Color, to: Color, num_steps: usize, duration: Duration) {
+        let sleep_time = Duration::from_millis(duration.as_millis() as u64 / num_steps as u64);
+
+        let from_r = from.red as f32;
+        let from_g = from.green as f32;
+        let from_b = from.blue as f32;
+
+        let to_r = to.red as f32;
+        let to_g = to.green as f32;
+        let to_b = to.blue as f32;
+
+        let num_steps_f32 = num_steps as f32;
+
+        for i in 0..num_steps {
+            // Figure out a blend of `from` and `to`
+            let step_r = ((i as f32 * to_r / num_steps_f32)
+                + ((num_steps - i) as f32 * from_r / num_steps_f32)) as u8;
+            let step_g = ((i as f32 * to_g / num_steps_f32)
+                + ((num_steps - i) as f32 * from_g / num_steps_f32)) as u8;
+            let step_b = ((i as f32 * to_b / num_steps_f32)
+                + ((num_steps - i) as f32 * from_b / num_steps_f32)) as u8;
+
+            let step_color = (step_r, step_g, step_b).into();
+            self.set_color(step_color).unwrap();
+
+            thread::sleep(sleep_time);
+        }
+    }
+
+    /// Fades in from black
+    pub fn fade_in(&mut self, to: Color, num_steps: usize, duration: Duration) {
+        self.fade_between((0, 0, 0).into(), to, num_steps, duration);
+    }
+
+    /// Fades out to black
+    pub fn fade_out(&mut self, from: Color, num_steps: usize, duration: Duration) {
+        self.fade_between(from, (0, 0, 0).into(), num_steps, duration);
+    }
+
+    /// Blinks the specified color.
+    pub fn blink(&mut self, color: Color, on_time: Duration, off_time: Duration, times: usize) {
+        for _ in 0..times {
+            self.set_color(color).unwrap();
+            thread::sleep(on_time);
+            self.off().unwrap();
+            thread::sleep(off_time);
+        }
     }
 }
