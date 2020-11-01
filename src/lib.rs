@@ -8,16 +8,16 @@ use std::time::Duration;
 const PORT_NUM: &'static str = ":5577";
 
 #[derive(Debug)]
-pub enum WifiBulbError {
+pub enum MagicLightError {
     IOError(String),
     Internal(String),
 }
 
-impl From<std::io::Error> for WifiBulbError {
+impl From<std::io::Error> for MagicLightError {
     // Os { code: 113, kind: Other, message: "No route to host" }
     fn from(e: std::io::Error) -> Self {
         println!("{:?}", e);
-        WifiBulbError::IOError("Some sort of IOError".to_string())
+        MagicLightError::IOError("Some sort of IOError".to_string())
     }
 }
 
@@ -39,22 +39,22 @@ impl From<(u8, u8, u8)> for Color {
 }
 
 #[derive(Debug)]
-pub struct WifiBulb {
+pub struct MagicLight {
     stream: TcpStream,
 }
 
-impl Drop for WifiBulb {
+impl Drop for MagicLight {
     fn drop(&mut self) {
         self.disconnect().unwrap();
     }
 }
 
-impl WifiBulb {
-    fn scan(_timeout: Duration) -> Result<Self, WifiBulbError> {
+impl MagicLight {
+    fn scan(_timeout: Duration) -> Result<Self, MagicLightError> {
         todo!("Scan the local network for wifi bulbs")
     }
 
-    pub fn new(address: &str) -> Result<Self, WifiBulbError> {
+    pub fn new(address: &str) -> Result<Self, MagicLightError> {
         let mut full_addr = address.to_string();
         full_addr.push_str(PORT_NUM);
 
@@ -62,19 +62,19 @@ impl WifiBulb {
 
         let stream = TcpStream::connect(full_addr)?;
 
-        Ok(WifiBulb { stream })
+        Ok(MagicLight { stream })
     }
 
-    pub fn disconnect(&mut self) -> Result<(), WifiBulbError> {
+    pub fn disconnect(&mut self) -> Result<(), MagicLightError> {
         self.stream.shutdown(Shutdown::Both).map_err(|e| e.into())
     }
 
-    pub fn off(&mut self) -> Result<(), WifiBulbError> {
+    pub fn off(&mut self) -> Result<(), MagicLightError> {
         self.set_color((0, 0, 0).into())?;
         Ok(())
     }
 
-    pub fn set_color(&mut self, color: Color) -> Result<(), WifiBulbError> {
+    pub fn set_color(&mut self, color: Color) -> Result<(), MagicLightError> {
         const MODE: u8 = 49; // corresponds with the ascii byte '1' == 0x31 == 49
                              // message is the sequence of bytes:
                              // send mode + red + green + blue + magic bytes + checksum
@@ -93,7 +93,7 @@ impl WifiBulb {
             0, // the checksum, to be added
         ];
 
-        message[7] = WifiBulb::checksum(&message);
+        message[7] = MagicLight::checksum(&message);
 
         self.stream.write(&message)?;
         Ok(())
@@ -103,7 +103,7 @@ impl WifiBulb {
         &mut self,
         rgb: (u8, u8, u8),
         extra: (u8, u8, u8),
-    ) -> Result<(), WifiBulbError> {
+    ) -> Result<(), MagicLightError> {
         const MODE: u8 = 49; // corresponds with the ascii byte '1' == 0x31 == 49
                              // message is the sequence of bytes:
                              // send mode + red + green + blue + magic bytes + checksum
@@ -116,7 +116,7 @@ impl WifiBulb {
             0, // the checksum, to be added
         ];
 
-        message[7] = WifiBulb::checksum(&message);
+        message[7] = MagicLight::checksum(&message);
 
         self.stream.write(&message)?;
         Ok(())

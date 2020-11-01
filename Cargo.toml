@@ -1,5 +1,5 @@
 [package]
-name = "wifibulb-rust"
+name = "magicbulb-rust"
 version = "0.1.0"
 authors = ["Adam Shirey"]
 edition = "2018"
