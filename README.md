@@ -4,11 +4,11 @@ A Rust library for [MagicLight bulbs](https://smile.amazon.com/dp/B074VWLY1J).
 
 
 ```rust
-use wifibulb_rust::*;
+use magiclight_rust::*;
 use std::time::Duration;
 
-fn main() -> Result<(), WifiBulbError>{
-    let mut bulb = WifiBulb::new("192.168.0.123")?;
+fn main() -> Result<(), MagicLightError>{
+    let mut bulb = MagicLight::new("192.168.0.123")?;
 
     // Set the color to blue and delay for 1000ms
     let blue = Color {
