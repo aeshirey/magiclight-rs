@@ -1,7 +1,7 @@
 [package]
-name = "magiclight-rust"
+name = "magiclight-rs"
 version = "0.1.0"
-authors = ["Adam Shirey"]
+authors = ["Adam Shirey <adam@shirey.ch>"]
 edition = "2018"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html

@@ -5,7 +5,7 @@ use std::net::{Shutdown, TcpStream}; // SocketAddr when scanning
 use std::thread;
 use std::time::Duration;
 
-const PORT_NUM: &'static str = ":5577";
+const PORT_NUM: &str = ":5577";
 
 #[derive(Debug)]
 pub enum MagicLightError {
@@ -141,7 +141,7 @@ impl MagicLight {
     }
 
     /// Fade between two colors.
-    /// 
+    ///
     /// The light will fade from `from` to `to` over approximately the `duration` (plus time to execute color changes) in
     /// `num_steps` distinct steps.
     pub fn fade_between(&mut self, from: Color, to: Color, num_steps: usize, duration: Duration) {
@@ -157,10 +157,10 @@ impl MagicLight {
 
         let num_steps_f32 = num_steps as f32;
 
-        for i in 0..num_steps {
+        for i in 0..=num_steps {
             // Figure out a blend of `from` and `to`
-            let step_r = ((i as f32 * to_r / num_steps_f32)
-                + ((num_steps - i) as f32 * from_r / num_steps_f32)) as u8;
+            let scale = i as f32 / num_steps_f32; // [0, 1]
+            let step_r = (scale * to_r + (1.0 - scale) * from_r) as u8;
             let step_g = ((i as f32 * to_g / num_steps_f32)
                 + ((num_steps - i) as f32 * from_g / num_steps_f32)) as u8;
             let step_b = ((i as f32 * to_b / num_steps_f32)
